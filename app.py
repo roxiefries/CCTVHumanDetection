@@ -1,21 +1,32 @@
-import sys
 import cv2
 import os
+import sys
 import shutil
 import numpy as np
 from PyQt6.QtWidgets import QApplication, QMainWindow, QLabel, QPushButton, QFileDialog, QMessageBox, QVBoxLayout, \
     QWidget, QSlider, QDialog, QHBoxLayout
 from PyQt6.QtGui import QPixmap, QImage
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtWidgets import QApplication
+from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QIcon
+
+
+
+os.environ['QT_QPA_PLATFORM_PLUGIN_PATH'] = os.path.join(os.path.dirname(__file__), 'platforms')
+
 
 class ImageViewer(QDialog):
     def __init__(self, images):
         super().__init__()
 
         self.setWindowTitle("Detected Images")
-        self.setFixedSize(800, 600)  # Set a fixed size for the window
-
+        self.setFixedSize(1000, 900)  # Set a fixed size for the window
         layout = QVBoxLayout()
+
+        self.instruct_label = QLabel("The extracted images are located in your documents folder named 'extracted_images'")
+        self.instruct_label.setStyleSheet("color: white; font-size: 20px;")  # Set the color to blue and font size to 16px
+        layout.addWidget(self.instruct_label)
 
         self.image_label = QLabel()
         layout.addWidget(self.image_label)
@@ -26,13 +37,37 @@ class ImageViewer(QDialog):
         self.show_image()
 
         self.setLayout(layout)
+        self.label_label = QLabel(
+            "to navigate through the detected person, just pressed left or right button")
+        self.label_label.setStyleSheet(
+            "color: white; font-size: 20px;")  # Set the color to blue and font size to 16px
+        layout.addWidget(self.label_label)
+
+        self.detected_label = QLabel(
+            "If you wish to save the selected image on desired folder, click the save button :)")
+        self.detected_label.setStyleSheet(
+            "color: white; font-size: 20px;")  # Set the color to blue and font size to 16px
+        layout.addWidget(self.detected_label)
+
+        self.image_index_label = QLabel(
+            "----")
+        self.image_index_label.setStyleSheet(
+            "color: white; font-size: 20px;")  # Set the color to blue and font size to 16px
+        layout.addWidget(self.image_index_label)
 
         self.save_button = QPushButton("Save Image")
+        self.save_button.setStyleSheet("""
+                         background-color: blue;
+                         color: white;
+                         font-weight: bold;
+                         text-transform: uppercase;
+                         font-size: 20px;
+                         padding: 10px;
+                     """)
         self.save_button.clicked.connect(self.save_current_image)
         layout.addWidget(self.save_button)
 
         self.setLayout(layout)
-
 
     def save_current_image(self):
         if 0 <= self.current_index < len(self.images):
@@ -54,6 +89,8 @@ class ImageViewer(QDialog):
             self.image_label.setPixmap(pixmap)
             self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
+
+
     def keyPressEvent(self, event):
         if event.key() == Qt.Key.Key_Right:
             self.next_image()
@@ -72,33 +109,80 @@ class ImageViewer(QDialog):
             self.current_index = len(self.images) - 1
         self.show_image()
 
+
 class PersonDetectionApp(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Person Detection App")
-        self.setGeometry(100, 100, 400, 800)
+        self.setWindowTitle("PersonDetection App")
+        self.setGeometry(100, 100, 800, 600)
 
         self.central_widget = QWidget()
         self.setCentralWidget(self.central_widget)
 
         layout = QVBoxLayout()
 
-        mp4_label = QLabel("Only MP4 files are allowed")
-        layout.addWidget(mp4_label)
+        # Create a QLabel widget to display the image
+        image_label = QLabel()
+        layout.addWidget(image_label)
 
-        self.file_label = QLabel("No file selected")
-        layout.addWidget(self.file_label)
+
+        mp4_label = QLabel("Only MP4 files are allowed")
+        mp4_label.setStyleSheet("""
+                    font-size: 18px; /* Adjust font size to make it bigger */
+                """)
+
+        layout.addWidget(mp4_label)
+        # Load the image
+        pixmap = QPixmap("/Users/aynnarosepineda/PycharmProjects/CCTVHumanExtraction/logo1.png")  # Replace with your image file path\
+        # Set the desired height and width for the image
+        new_width = 400  # Replace with your desired width
+        new_height = 150  # Replace with your desired height
+
+        # Resize the image to the specified dimensions
+        pixmap = pixmap.scaled(new_width, new_height)
+
+        # Create a QLabel and set the pixmap
+        image_label = QLabel()
+
+        image_label.setPixmap(pixmap)
+
+        image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Add the QLabel to the layout
+        layout.addWidget(image_label)
+
 
         self.browse_button = QPushButton("Upload MP4 File")
         self.browse_button.clicked.connect(self.browse_file)
+        self.browse_button.setStyleSheet("""
+                  background-color: red;
+                  color: white;
+                  font-weight: bold;
+                  text-transform: uppercase;
+                  font-size: 16px;
+                  padding: 10px;
+              """)
         layout.addWidget(self.browse_button)
+
+        self.file_label = QLabel("No file selected")
+        self.file_label.setStyleSheet("color: green; font-size: 20px;")  # Set the color to blue and font size to 16px
+        layout.addWidget(self.file_label)
 
         self.thumbnail_label = QLabel()  # QLabel to display the thumbnail
         layout.addWidget(self.thumbnail_label)
 
         self.extract_button = QPushButton("Extract Person Detected")
-        self.extract_button.setStyleSheet("background-color: #007ACC; color: black; font-weight: bold;")
+        self.extract_button.setStyleSheet("""
+                      background-color: lightgreen;
+                      color: black;
+                      font-weight: bold;
+                      text-transform: uppercase;
+                      font-size: 16px;
+                      padding: 10px;
+
+                  """)
+
         self.extract_button.clicked.connect(self.extract_person)
         layout.addWidget(self.extract_button)
 
@@ -159,7 +243,7 @@ class PersonDetectionApp(QMainWindow):
 
             # Extract frames
             input_file = self.file_path
-            interval = 10  # Extract frames every 5 seconds
+            interval = 10  # Extract frames every 10 seconds
 
             cap = cv2.VideoCapture(input_file)
             frame_rate = cap.get(cv2.CAP_PROP_FPS)
@@ -167,12 +251,27 @@ class PersonDetectionApp(QMainWindow):
             frame_interval = int(frame_rate * interval)
 
             frame_number = 0
-            output_folder = "extracted_images"  # New output folder name
-            os.makedirs(output_folder, exist_ok=True)  # Create the output folder if it doesn't exist
+            import os
 
-            # Load the YOLOv4-tiny model
-            yolo_config_path = 'yolov4-tiny.cfg'  # Replace with the path to your YOLOv4-tiny.cfg file
-            yolo_weights_path = 'yolov4-tiny.weights'  # Replace with the path to your YOLOv4-tiny weights file
+            # Get the user's home directory
+            home_dir = os.path.expanduser('~')
+
+            # Path to the Documents folder
+            documents_folder = os.path.join(home_dir, 'Documents')
+
+            # Path to the new output folder inside the Documents folder
+            output_folder = os.path.join(documents_folder, 'extracted_images')
+
+            # Create the output folder if it doesn't exist
+            os.makedirs(output_folder, exist_ok=True)
+
+            # Path to the directory of the current script
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+
+            # Paths to the YOLO files
+            yolo_config_path = os.path.join(script_dir, 'yolo', 'yolov4-tiny.cfg')
+            yolo_weights_path = os.path.join(script_dir, 'yolo', 'yolov4-tiny.weights')
+
             net = cv2.dnn.readNet(yolo_weights_path, yolo_config_path)
 
             # Create a list to store the names of files with detected people
@@ -193,13 +292,13 @@ class PersonDetectionApp(QMainWindow):
                     # Load and preprocess the input image
                     input_image = frame
                     # Preprocess the input image (resize to uniform dimensions)
-                    input_image = cv2.resize(frame, (580, 480))  # Adjust dimensions as need
+                    input_image = cv2.resize(frame, (800, 580))  # Adjust dimensions as need
 
                     if input_image is not None:
                         height, width, _ = input_image.shape
 
                         # Create a blob from the image for YOLO input
-                        blob = cv2.dnn.blobFromImage(input_image, 1 / 255.0, (416, 416), swapRB=True, crop=False)
+                        blob = cv2.dnn.blobFromImage(input_image, 1 / 255.0, (500, 500), swapRB=True, crop=False)
                         net.setInput(blob)
 
                         # Get the names of the output layers
@@ -211,24 +310,39 @@ class PersonDetectionApp(QMainWindow):
                         # Filter detections to get only "person" class
                         detected_people = []
 
+
                         for detection in detections:
                             for obj in detection:
                                 scores = obj[5:]
                                 class_id = np.argmax(scores)
                                 confidence = scores[class_id]
 
-                                if confidence > 0.5 and class_id == 0:  # Class ID 0 represents "person"
+                                if confidence > 0.7 and class_id == 0:  # Class ID 0 represents "person"
                                     detected_people.append(obj)
 
                         if detected_people:
                             # If people are detected, save the image with bounding boxes
                             person_detected_files.append(output_file)
-
+                            count_detected = 0;
                             for obj in detected_people:
                                 box = obj[0:4] * np.array([width, height, width, height])
                                 (x, y, w, h) = box.astype("int")
-                                cv2.rectangle(input_image, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                                # Define how much you want to move the rectangle to the left and up
+                                move_x = -10  # Adjust this value as needed for your desired leftward movement
+                                move_y = -35  # Adjust this value as needed for your desired upward movement
 
+                                # Update the coordinates of the top-left corner
+                                x += move_x
+                                y += move_y
+                                cv2.rectangle(input_image, (x, y), (x + w, y + h), (0, 0, 255), 3)
+                                # Define the text label and its position
+                                label = "person"
+                                text_position = (
+                                x, y - 10)  # Place the label slightly above the top-left corner of the bounding box
+
+                                # Draw the label text on the image
+                                cv2.putText(input_image, label, text_position, cv2.FONT_HERSHEY_SIMPLEX, 1,
+                                            (255, 255,255), 2)
                             # Save the processed image
                             cv2.imwrite(output_file, input_image)
 
@@ -243,26 +357,17 @@ class PersonDetectionApp(QMainWindow):
             image_viewer = ImageViewer(self.detected_images)
             image_viewer.exec()
 
-            # Print the list of files with detected people
+           # Print the list of files with detected people
             print("Images with detected people:")
             for file_path in person_detected_files:
                 print(file_path)
-
-    def cleanup(self):
-        # This function will be called when the application is about to quit
-        extracted_images_folder = "extracted_images"
-        if os.path.exists(extracted_images_folder):
-            # If the folder exists, remove it and its contents
-            for file_name in os.listdir(extracted_images_folder):
-                file_path = os.path.join(extracted_images_folder, file_name)
-                os.remove(file_path)
-            os.rmdir(extracted_images_folder)
 
 def main():
     app = QApplication(sys.argv)
     window = PersonDetectionApp()
     window.show()
     sys.exit(app.exec())
+
 
 if __name__ == "__main__":
     main()
