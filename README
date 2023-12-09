@@ -1,0 +1,8 @@
+Before running this app in PyCharm, you need to install the following Python packages using pip:
+It is highly recommended to use PyCharm in using this app
+
+pip install opencv-python
+pip install numpy
+pip install PyQt6
+pip install PyQt6-tools
+pip install tensorflow
